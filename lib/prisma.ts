@@ -1,12 +1,14 @@
-import { PrismaClient } from '../generated/prisma'
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
+import { PrismaClient } from '@prisma/client'
+import { PrismaNeon } from '@prisma/adapter-neon'
+import { Pool } from '@neondatabase/serverless'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
 }
 
 function createPrismaClient() {
-  const adapter = new PrismaBetterSqlite3({ url: 'file:./prisma/prisma/dev.db' })
+  const pool = new Pool({ connectionString: process.env.POSTGRES_PRISMA_URL! })
+  const adapter = new PrismaNeon(pool)
   return new PrismaClient({ adapter })
 }
 

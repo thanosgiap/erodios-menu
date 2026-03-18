@@ -3,8 +3,12 @@ import fs from 'fs'
 import path from 'path'
 import { parse } from 'csv-parse/sync'
 import { PrismaClient } from '@prisma/client'
+import { PrismaNeon } from '@prisma/adapter-neon'
+import { Pool } from '@neondatabase/serverless'
 
-const prisma = new PrismaClient()
+const pool = new Pool({ connectionString: process.env.POSTGRES_PRISMA_URL! })
+const adapter = new PrismaNeon(pool)
+const prisma = new PrismaClient({ adapter })
 
 interface DishRow {
     english_name: string
