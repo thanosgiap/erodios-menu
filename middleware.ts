@@ -7,7 +7,12 @@ export async function middleware(req: NextRequest) {
   const token = await getToken({
     req,
     secret: process.env.AUTH_SECRET,
+    cookieName: process.env.NODE_ENV === 'production' 
+      ? '__Secure-authjs.session-token'
+      : 'authjs.session-token',
   })
+
+  console.log('Middleware token:', !!token, 'Cookie:', req.cookies.getAll().map(c => c.name))
 
   const isAdminRoute = req.nextUrl.pathname.startsWith('/admin')
 
