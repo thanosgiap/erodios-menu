@@ -15,6 +15,7 @@ type Dish = {
     descRu: string
     price: number
     order: number
+    visible: boolean
 }
 
 const CATEGORIES = ['soup', 'appetizer', 'salad', 'pasta', 'fish', 'seafood', 'meat', 'speciality', 'suggestion', 'dessert', 'coffee']
@@ -24,6 +25,7 @@ const empty: Omit<Dish, 'id'> = {
     nameEn: '', nameEl: '', nameRu: '',
     descEn: '', descEl: '', descRu: '',
     price: 0, order: 0,
+    visible: true,
 }
 
 export default function AdminClient({ initialDishes }: { initialDishes: Dish[] }) {
@@ -45,7 +47,18 @@ export default function AdminClient({ initialDishes }: { initialDishes: Dish[] }
     function startEdit(dish: Dish) {
         setEditing(dish)
         setAdding(false)
-        setForm({ category: dish.category, nameEn: dish.nameEn, nameEl: dish.nameEl, nameRu: dish.nameRu, descEn: dish.descEn, descEl: dish.descEl, descRu: dish.descRu, price: dish.price, order: dish.order })
+        setForm({
+            category: dish.category,
+            nameEn: dish.nameEn,
+            nameEl: dish.nameEl,
+            nameRu: dish.nameRu,
+            descEn: dish.descEn,
+            descEl: dish.descEl,
+            descRu: dish.descRu,
+            price: dish.price,
+            order: dish.order,
+            visible: dish.visible,
+        })
     }
 
     function startAdd() {
@@ -91,6 +104,16 @@ export default function AdminClient({ initialDishes }: { initialDishes: Dish[] }
         router.refresh()
     }
 
+    async function toggleVisibility(dish: Dish) {
+        const res = await fetch(`/api/dishes/${dish.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...dish, visible: !dish.visible }),
+        })
+        const updated = await res.json()
+        setDishes(dishes.map(d => d.id === dish.id ? updated : d))
+    }
+
     const inputStyle = {
         width: '100%', padding: '8px 10px', background: 'transparent',
         border: '0.5px solid rgba(122,106,85,0.4)', borderRadius: '2px',
@@ -102,7 +125,7 @@ export default function AdminClient({ initialDishes }: { initialDishes: Dish[] }
     }
 
     return (
-        <main style={{ minHeight: '100vh', background: '#F7F3EE', fontFamily: '"Jost", sans-serif', paddingBottom: '4rem' }}>
+        <main style={{ minHeight: '100vh', background: '#EFE9DC', fontFamily: '"Jost", sans-serif', paddingBottom: '4rem' }}>
             <style>{`@import url('https://fonts.googleapis.com/css2?family=Philosopher&family=Jost:wght@300;400&display=swap'); * { box-sizing: border-box; margin: 0; padding: 0; } input,select,textarea { outline: none; } input:focus,select:focus,textarea:focus { border-color: rgba(122,106,85,0.7) !important; }`}</style>
 
             {/* Header */}
@@ -197,7 +220,11 @@ export default function AdminClient({ initialDishes }: { initialDishes: Dish[] }
                         </thead>
                         <tbody>
                             {filtered.map((dish, i) => (
-                                <tr key={dish.id} style={{ borderBottom: '0.5px solid rgba(122,106,85,0.1)', background: i % 2 === 0 ? 'transparent' : 'rgba(122,106,85,0.03)' }}>
+                                <tr key={dish.id} style={{
+                                    borderBottom: '0.5px solid rgba(122,106,85,0.1)',
+                                    background: i % 2 === 0 ? 'transparent' : 'rgba(122,106,85,0.03)',
+                                    opacity: dish.visible ? 1 : 0.4,
+                                }}>
                                     <td style={{ padding: '10px 14px', color: '#7A6A55' }}>{dish.category}</td>
                                     <td style={{ padding: '10px 14px', color: '#2C2820' }}>{dish.nameEn}</td>
                                     <td style={{ padding: '10px 14px', color: '#2C2820' }}>{dish.nameEl}</td>
@@ -205,8 +232,24 @@ export default function AdminClient({ initialDishes }: { initialDishes: Dish[] }
                                     <td style={{ padding: '10px 14px', color: '#2C2820' }}>€{dish.price.toFixed(2)}</td>
                                     <td style={{ padding: '10px 14px' }}>
                                         <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button onClick={() => startEdit(dish)} style={{ background: 'transparent', border: '0.5px solid rgba(122,106,85,0.4)', borderRadius: '2px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', color: '#7A6A55' }}>Edit</button>
-                                            <button onClick={() => deleteDish(dish.id)} style={{ background: 'transparent', border: '0.5px solid rgba(180,80,60,0.4)', borderRadius: '2px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', color: '#9B3A2A' }}>Delete</button>
+                                            <button
+                                                onClick={() => startEdit(dish)}
+                                                style={{ background: 'transparent', border: '0.5px solid rgba(122,106,85,0.4)', borderRadius: '2px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', color: '#7A6A55' }}
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => toggleVisibility(dish)}
+                                                style={{ background: 'transparent', border: `0.5px solid ${dish.visible ? 'rgba(60,140,80,0.4)' : 'rgba(122,106,85,0.4)'}`, borderRadius: '2px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', color: dish.visible ? '#2D7A45' : '#7A6A55' }}
+                                            >
+                                                {dish.visible ? 'Hide' : 'Show'}
+                                            </button>
+                                            <button
+                                                onClick={() => deleteDish(dish.id)}
+                                                style={{ background: 'transparent', border: '0.5px solid rgba(180,80,60,0.4)', borderRadius: '2px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', color: '#9B3A2A' }}
+                                            >
+                                                Delete
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>

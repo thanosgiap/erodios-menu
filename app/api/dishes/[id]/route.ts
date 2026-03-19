@@ -8,9 +8,21 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
   const { id } = await params
   const body = await req.json()
+
   const dish = await prisma.dish.update({
     where: { id: Number(id) },
-    data: body,
+    data: {
+      category: body.category,
+      nameEn:   body.nameEn,
+      nameEl:   body.nameEl,
+      nameRu:   body.nameRu,
+      descEn:   body.descEn,
+      descEl:   body.descEl,
+      descRu:   body.descRu,
+      price:    body.price,
+      order:    body.order,
+      visible:  body.visible,
+    },
   })
   return NextResponse.json(dish)
 }

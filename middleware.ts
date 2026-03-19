@@ -12,8 +12,6 @@ export async function middleware(req: NextRequest) {
       : 'authjs.session-token',
   })
 
-  console.log('Middleware token:', !!token, 'Cookie:', req.cookies.getAll().map(c => c.name))
-
   const isAdminRoute = req.nextUrl.pathname.startsWith('/admin')
 
   if (isAdminRoute && !token) {

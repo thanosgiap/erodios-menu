@@ -3,6 +3,8 @@ import { ui, Language } from '../lib/translations'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import CategoryNav from '../components/CategoryNav'
 
+export const dynamic = 'force-dynamic'
+
 type Props = {
   searchParams: Promise<{ lang?: string }>
 }
@@ -17,6 +19,7 @@ export default async function MenuPage({ searchParams }: Props) {
   const t = ui[language]
 
   const dishes = await prisma.dish.findMany({
+    where: { visible: true },
     orderBy: [{ category: 'asc' }, { order: 'asc' }],
   })
 
@@ -28,7 +31,7 @@ export default async function MenuPage({ searchParams }: Props) {
 
   return (
     <main style={{
-      background: '#F7F3EE',
+      background: '#EFE9DC',
       minHeight: '100vh',
       fontFamily: '"Jost", sans-serif',
       paddingBottom: '4rem',
