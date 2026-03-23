@@ -1,8 +1,23 @@
 'use client'
-
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core'
+import {
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    arrayMove,
+} from '@dnd-kit/sortable'
+import SortableDishRow from './SortableDishRow'
+import { useState, useEffect } from 'react'
 
 type Dish = {
     id: number
@@ -28,6 +43,8 @@ const empty: Omit<Dish, 'id'> = {
     visible: true,
 }
 
+
+
 export default function AdminClient({ initialDishes }: { initialDishes: Dish[] }) {
     const router = useRouter()
     const [dishes, setDishes] = useState<Dish[]>(initialDishes)
@@ -38,11 +55,59 @@ export default function AdminClient({ initialDishes }: { initialDishes: Dish[] }
     const [search, setSearch] = useState('')
     const [filterCat, setFilterCat] = useState('all')
 
-    const filtered = dishes.filter(d => {
-        const matchCat = filterCat === 'all' || d.category === filterCat
-        const matchSearch = d.nameEn.toLowerCase().includes(search.toLowerCase())
-        return matchCat && matchSearch
-    })
+    const filtered = dishes
+        .filter(d => {
+            const matchCat = filterCat === 'all' || d.category === filterCat
+            const matchSearch = d.nameEn.toLowerCase().includes(search.toLowerCase())
+            return matchCat && matchSearch
+        })
+        .sort((a, b) => {
+            const catDiff = CATEGORIES.indexOf(a.category) - CATEGORIES.indexOf(b.category)
+            if (catDiff !== 0) return catDiff
+            return a.order - b.order
+        })
+
+    const sensors = useSensors(
+        useSensor(PointerSensor),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    )
+
+    async function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event
+        if (!over || active.id === over.id) return
+
+        const activeDish = dishes.find(d => d.id === active.id)
+        const overDish = dishes.find(d => d.id === over.id)
+
+        if (!activeDish || !overDish) return
+        if (activeDish.category !== overDish.category) return
+
+        const categoryDishes = dishes.filter(d => d.category === activeDish.category)
+        const otherDishes = dishes.filter(d => d.category !== activeDish.category)
+
+        const oldIndex = categoryDishes.findIndex(d => d.id === active.id)
+        const newIndex = categoryDishes.findIndex(d => d.id === over.id)
+
+        const reordered = arrayMove(categoryDishes, oldIndex, newIndex)
+        const updatedCategory = reordered.map((d, i) => ({ ...d, order: i + 1 }))
+
+        const allDishes = [...otherDishes, ...updatedCategory].sort((a, b) => {
+            if (a.category === b.category) return a.order - b.order
+            return a.category.localeCompare(b.category)
+        })
+
+        setDishes(allDishes)
+
+        await fetch('/api/dishes/reorder', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                dishes: updatedCategory.map(d => ({ id: d.id, order: d.order }))
+            }),
+        })
+
+        router.refresh()
+    }
 
     function startEdit(dish: Dish) {
         setEditing(dish)
@@ -209,57 +274,36 @@ export default function AdminClient({ initialDishes }: { initialDishes: Dish[] }
                 )}
 
                 {/* Dishes Table */}
-                <div style={{ background: '#fff', border: '0.5px solid rgba(122,106,85,0.25)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '0.5px solid rgba(122,106,85,0.2)' }}>
-                                {['Category', 'Name (EN)', 'Name (EL)', 'Name (RU)', 'Price', 'Actions'].map(h => (
-                                    <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7A6A55', fontWeight: 400 }}>{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map((dish, i) => (
-                                <tr key={dish.id} style={{
-                                    borderBottom: '0.5px solid rgba(122,106,85,0.1)',
-                                    background: i % 2 === 0 ? 'transparent' : 'rgba(122,106,85,0.03)',
-                                    opacity: dish.visible ? 1 : 0.4,
-                                }}>
-                                    <td style={{ padding: '10px 14px', color: '#7A6A55' }}>{dish.category}</td>
-                                    <td style={{ padding: '10px 14px', color: '#2C2820' }}>{dish.nameEn}</td>
-                                    <td style={{ padding: '10px 14px', color: '#2C2820' }}>{dish.nameEl}</td>
-                                    <td style={{ padding: '10px 14px', color: '#2C2820' }}>{dish.nameRu}</td>
-                                    <td style={{ padding: '10px 14px', color: '#2C2820' }}>€{dish.price.toFixed(2)}</td>
-                                    <td style={{ padding: '10px 14px' }}>
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button
-                                                onClick={() => startEdit(dish)}
-                                                style={{ background: 'transparent', border: '0.5px solid rgba(122,106,85,0.4)', borderRadius: '2px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', color: '#7A6A55' }}
-                                            >
-                                                Edit
-                                            </button>
-                                            <button
-                                                onClick={() => toggleVisibility(dish)}
-                                                style={{ background: 'transparent', border: `0.5px solid ${dish.visible ? 'rgba(60,140,80,0.4)' : 'rgba(122,106,85,0.4)'}`, borderRadius: '2px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', color: dish.visible ? '#2D7A45' : '#7A6A55' }}
-                                            >
-                                                {dish.visible ? 'Hide' : 'Show'}
-                                            </button>
-                                            <button
-                                                onClick={() => deleteDish(dish.id)}
-                                                style={{ background: 'transparent', border: '0.5px solid rgba(180,80,60,0.4)', borderRadius: '2px', padding: '4px 10px', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit', color: '#9B3A2A' }}
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </td>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <div style={{ background: '#fff', border: '0.5px solid rgba(122,106,85,0.25)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '0.5px solid rgba(122,106,85,0.2)' }}>
+                                    {['', 'Category', 'Name (EN)', 'Name (EL)', 'Name (RU)', 'Price', 'Actions'].map(h => (
+                                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7A6A55', fontWeight: 400 }}>{h}</th>
+                                    ))}
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    {filtered.length === 0 && (
-                        <p style={{ textAlign: 'center', padding: '2rem', fontSize: '13px', color: '#7A6A55', fontWeight: 300 }}>No dishes found.</p>
-                    )}
-                </div>
+                            </thead>
+                            <tbody>
+                                <SortableContext items={filtered.map(d => d.id)} strategy={verticalListSortingStrategy}>
+                                    {filtered.map((dish, i) => (
+                                        <SortableDishRow
+                                            key={dish.id}
+                                            dish={dish}
+                                            index={i}
+                                            onEdit={startEdit}
+                                            onDelete={deleteDish}
+                                            onToggle={toggleVisibility}
+                                        />
+                                    ))}
+                                </SortableContext>
+                            </tbody>
+                        </table>
+                        {filtered.length === 0 && (
+                            <p style={{ textAlign: 'center', padding: '2rem', fontSize: '13px', color: '#7A6A55', fontWeight: 300 }}>No dishes found.</p>
+                        )}
+                    </div>
+                </DndContext>
 
                 <p style={{ textAlign: 'center', fontSize: '11px', color: '#7A6A55', marginTop: '1.5rem', fontWeight: 300 }}>
                     {dishes.length} dishes total
