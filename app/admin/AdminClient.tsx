@@ -227,49 +227,91 @@ export default function AdminClient({ initialDishes }: { initialDishes: Dish[] }
 
                 {/* Add / Edit Form */}
                 {(adding || editing) && (
-                    <div style={{ background: '#fff', border: '0.5px solid rgba(122,106,85,0.25)', borderRadius: '4px', padding: '1.5rem', marginBottom: '1.5rem' }}>
-                        <h2 style={{ fontFamily: '"Philosopher", serif', fontWeight: 400, fontSize: '1.2rem', color: '#2C2820', marginBottom: '1.2rem' }}>
-                            {adding ? 'Add New Dish' : 'Edit Dish'}
-                        </h2>
+                    <div
+                        onClick={(e) => { if (e.target === e.currentTarget) cancelForm() }}
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'rgba(44,40,32,0.5)',
+                            zIndex: 200,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '1rem',
+                        }}
+                    >
+                        <div style={{
+                            background: '#F7F3EE',
+                            border: '0.5px solid rgba(122,106,85,0.25)',
+                            borderRadius: '4px',
+                            padding: '2rem',
+                            width: '100%',
+                            maxWidth: '860px',
+                            maxHeight: '90vh',
+                            overflowY: 'auto',
+                            position: 'relative',
+                        }}>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                            <div>
-                                <label style={labelStyle}>Category</label>
-                                <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={inputStyle}>
-                                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                                </select>
-                            </div>
-                            <div>
-                                <label style={labelStyle}>Price (€)</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    value={form.price}
-                                    onChange={e => setForm({ ...form, price: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                                    style={inputStyle}
-                                />
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                            <div><label style={labelStyle}>Name (English)</label><input value={form.nameEn} onChange={e => setForm({ ...form, nameEn: e.target.value })} style={inputStyle} /></div>
-                            <div><label style={labelStyle}>Name (Greek)</label><input value={form.nameEl} onChange={e => setForm({ ...form, nameEl: e.target.value })} style={inputStyle} /></div>
-                            <div><label style={labelStyle}>Name (Russian)</label><input value={form.nameRu} onChange={e => setForm({ ...form, nameRu: e.target.value })} style={inputStyle} /></div>
-                        </div>
-
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <div><label style={labelStyle}>Description (English)</label><textarea rows={3} value={form.descEn} onChange={e => setForm({ ...form, descEn: e.target.value })} style={{ ...inputStyle, resize: 'vertical' as const }} /></div>
-                            <div><label style={labelStyle}>Description (Greek)</label><textarea rows={3} value={form.descEl} onChange={e => setForm({ ...form, descEl: e.target.value })} style={{ ...inputStyle, resize: 'vertical' as const }} /></div>
-                            <div><label style={labelStyle}>Description (Russian)</label><textarea rows={3} value={form.descRu} onChange={e => setForm({ ...form, descRu: e.target.value })} style={{ ...inputStyle, resize: 'vertical' as const }} /></div>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '0.75rem' }}>
-                            <button onClick={saveDish} disabled={loading} style={{ background: '#2C2820', color: '#F7F3EE', border: 'none', borderRadius: '2px', padding: '8px 20px', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit', opacity: loading ? 0.7 : 1 }}>
-                                {loading ? 'Saving...' : 'Save'}
+                            {/* Close button */}
+                            <button
+                                onClick={cancelForm}
+                                style={{
+                                    position: 'absolute',
+                                    top: '1rem',
+                                    right: '1rem',
+                                    background: 'transparent',
+                                    border: 'none',
+                                    fontSize: '18px',
+                                    cursor: 'pointer',
+                                    color: '#7A6A55',
+                                    lineHeight: 1,
+                                    padding: '4px 8px',
+                                }}
+                            >
+                                ✕
                             </button>
-                            <button onClick={cancelForm} style={{ background: 'transparent', border: '0.5px solid rgba(122,106,85,0.4)', borderRadius: '2px', padding: '8px 20px', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit', color: '#7A6A55' }}>
-                                Cancel
-                            </button>
+
+                            <h2 style={{ fontFamily: '"Philosopher", serif', fontWeight: 400, fontSize: '1.2rem', color: '#2C2820', marginBottom: '1.2rem' }}>
+                                {adding ? 'Add New Dish' : 'Edit Dish'}
+                            </h2>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                                <div>
+                                    <label style={labelStyle}>Category</label>
+                                    <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={inputStyle}>
+                                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style={labelStyle}>Price (€)</label>
+                                    <input type="number" step="0.01" value={form.price} onChange={e => setForm({ ...form, price: e.target.value === '' ? 0 : parseFloat(e.target.value) })} style={inputStyle} />
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                                <div><label style={labelStyle}>Name (Greek)</label><input value={form.nameEl} onChange={e => setForm({ ...form, nameEl: e.target.value })} style={inputStyle} /></div>
+                                <div><label style={labelStyle}>Name (English)</label><input value={form.nameEn} onChange={e => setForm({ ...form, nameEn: e.target.value })} style={inputStyle} /></div>
+                                <div><label style={labelStyle}>Name (Russian)</label><input value={form.nameRu} onChange={e => setForm({ ...form, nameRu: e.target.value })} style={inputStyle} /></div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                                <div><label style={labelStyle}>Description (Greek)</label><textarea rows={3} value={form.descEl} onChange={e => setForm({ ...form, descEl: e.target.value })} style={{ ...inputStyle, resize: 'vertical' as const }} /></div>
+                                <div><label style={labelStyle}>Description (English)</label><textarea rows={3} value={form.descEn} onChange={e => setForm({ ...form, descEn: e.target.value })} style={{ ...inputStyle, resize: 'vertical' as const }} /></div>
+                                <div><label style={labelStyle}>Description (Russian)</label><textarea rows={3} value={form.descRu} onChange={e => setForm({ ...form, descRu: e.target.value })} style={{ ...inputStyle, resize: 'vertical' as const }} /></div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <button onClick={saveDish} disabled={loading} style={{ background: '#2C2820', color: '#F7F3EE', border: 'none', borderRadius: '2px', padding: '8px 20px', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit', opacity: loading ? 0.7 : 1 }}>
+                                    {loading ? 'Saving...' : 'Save'}
+                                </button>
+                                <button onClick={cancelForm} style={{ background: 'transparent', border: '0.5px solid rgba(122,106,85,0.4)', borderRadius: '2px', padding: '8px 20px', fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit', color: '#7A6A55' }}>
+                                    Cancel
+                                </button>
+                            </div>
+
                         </div>
                     </div>
                 )}
