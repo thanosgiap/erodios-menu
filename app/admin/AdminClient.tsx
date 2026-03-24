@@ -18,6 +18,7 @@ import {
 } from '@dnd-kit/sortable'
 import SortableDishRow from './SortableDishRow'
 import { useState, useEffect } from 'react'
+import React from 'react'
 
 type Dish = {
     id: number
@@ -279,23 +280,44 @@ export default function AdminClient({ initialDishes }: { initialDishes: Dish[] }
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                             <thead>
                                 <tr style={{ borderBottom: '0.5px solid rgba(122,106,85,0.2)' }}>
-                                    {['', 'Category', 'Name (EN)', 'Name (EL)', 'Name (RU)', 'Price', 'Actions'].map(h => (
+                                    {['', 'Category', 'Name (EL)', 'Name (EN)', 'Name (RU)', 'Price', 'Actions'].map(h => (
                                         <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: '#7A6A55', fontWeight: 400 }}>{h}</th>
                                     ))}
                                 </tr>
                             </thead>
                             <tbody>
                                 <SortableContext items={filtered.map(d => d.id)} strategy={verticalListSortingStrategy}>
-                                    {filtered.map((dish, i) => (
-                                        <SortableDishRow
-                                            key={dish.id}
-                                            dish={dish}
-                                            index={i}
-                                            onEdit={startEdit}
-                                            onDelete={deleteDish}
-                                            onToggle={toggleVisibility}
-                                        />
-                                    ))}
+                                    {filtered.map((dish, i) => {
+                                        const showCategoryHeader = i === 0 || filtered[i - 1].category !== dish.category
+                                        return (
+                                            <React.Fragment key={dish.id}>
+                                                {showCategoryHeader && (
+                                                    <tr key={`header-${dish.category}`}>
+                                                        <td colSpan={7} style={{
+                                                            padding: '16px 14px 8px',
+                                                            fontSize: '15px',
+                                                            letterSpacing: '0.2em',
+                                                            textTransform: 'uppercase',
+                                                            color: '#7A6A55',
+                                                            fontWeight: 400,
+                                                            borderBottom: '0.5px solid rgba(122,106,85,0.2)',
+                                                            background: 'rgba(122,106,85,0.05)',
+                                                            textAlign: 'center',
+                                                        }}>
+                                                            {dish.category}
+                                                        </td>
+                                                    </tr>
+                                                )}
+                                                <SortableDishRow
+                                                    dish={dish}
+                                                    index={i}
+                                                    onEdit={startEdit}
+                                                    onDelete={deleteDish}
+                                                    onToggle={toggleVisibility}
+                                                />
+                                            </React.Fragment>
+                                        )
+                                    })}
                                 </SortableContext>
                             </tbody>
                         </table>
